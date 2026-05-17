@@ -48,7 +48,7 @@ The application will start on `http://localhost:8080`
 
 ## Usage
 
-1. **Load Document**: Paste the HTTP URL of your OpenAPI.json file
+1. **Load Document**: Paste an HTTP URL or upload a local OpenAPI.json file
 2. **Parse**: Click "Load & Parse" to fetch and analyze the document
 3. **Select Modules**: Choose which API modules (tags) you want to include
 4. **Download**: Click "Download Filtered JSON" to get your filtered document
@@ -78,14 +78,17 @@ openapi-module-picker/
 ## API Endpoints
 
 ### POST /api/parse
-Parse an OpenAPI document from a URL.
+Parse an OpenAPI document from a URL or uploaded file.
 
-**Request:**
+**Request (URL mode):**
 ```json
 {
   "url": "https://api.example.com/openapi.json"
 }
 ```
+
+**Request (Upload mode):**
+- `multipart/form-data` with `file` field containing a JSON file
 
 **Response:**
 ```json

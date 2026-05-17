@@ -1,5 +1,6 @@
 // DOM Elements
 const openApiUrlInput = document.getElementById('openApiUrl');
+const openApiFileInput = document.getElementById('openApiFile');
 const parseBtn = document.getElementById('parseBtn');
 const parseMessage = document.getElementById('parseMessage');
 const selectionSection = document.getElementById('selectionSection');
@@ -61,9 +62,10 @@ function hideMessage(element) {
 
 async function handleParse() {
     const url = openApiUrlInput.value.trim();
+    const file = openApiFileInput.files[0];
     
-    if (!url) {
-        showMessage(parseMessage, 'Please enter a valid URL', 'error');
+    if (!url && !file) {
+        showMessage(parseMessage, 'Please enter a URL or select a JSON file', 'error');
         return;
     }
 
@@ -74,13 +76,23 @@ async function handleParse() {
     selectionSection.style.display = 'none';
 
     try {
-        const response = await fetch('/api/parse', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url }),
-        });
+        let response;
+        if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            response = await fetch('/api/parse', {
+                method: 'POST',
+                body: formData,
+            });
+        } else {
+            response = await fetch('/api/parse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url }),
+            });
+        }
 
         const data = await response.json();
 

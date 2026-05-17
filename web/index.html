@@ -23,9 +23,11 @@
                         id="openApiUrl" 
                         class="input-field"
                         placeholder="Enter OpenAPI.json HTTP URL (e.g., https://api.example.com/openapi.json)"
-                        required
                     >
                     <button id="parseBtn" class="btn btn-primary">Load & Parse</button>
+                </div>
+                <div class="input-group">
+                    <input type="file" id="openApiFile" class="input-field" accept=".json,application/json">
                 </div>
                 <div id="parseMessage" class="message"></div>
             </div>
@@ -52,7 +54,7 @@
             <div class="section info-section">
                 <h3>How to use:</h3>
                 <ol>
-                    <li>Paste the HTTP URL of your OpenAPI.json file</li>
+                    <li>Paste an HTTP URL or choose a local OpenAPI.json file</li>
                     <li>Click "Load & Parse" to fetch and analyze the document</li>
                     <li>Select the modules (tags) you want to include</li>
                     <li>Click "Download Filtered JSON" to get the filtered document</li>
