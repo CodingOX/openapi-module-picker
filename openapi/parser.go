@@ -24,7 +24,7 @@ func ParseDocument(data []byte) (map[string]any, error) {
 
 func DetectVersion(doc map[string]any) string {
 	if openapiVersion, ok := doc["openapi"].(string); ok {
-		if len(openapiVersion) >= 1 {
+		if len(openapiVersion) >= 2 && openapiVersion[:2] == "3." {
 			return "3.0"
 		}
 	}

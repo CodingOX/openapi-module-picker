@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -113,7 +114,12 @@ func parseRequestBody(r *http.Request) ([]byte, error) {
 	if err != nil || u.Scheme == "" || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, errors.New("invalid url")
 	}
-	resp, err := http.Get(req.URL) // #nosec G107 - URL validation above allows http/https only.
+	if !isSafeRemoteHost(u.Hostname()) {
+		return nil, errors.New("url host is not allowed")
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(req.URL) // #nosec G107 - Host restrictions above block localhost and private ranges.
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch url: %v", err)
 	}
@@ -126,6 +132,26 @@ func parseRequestBody(r *http.Request) ([]byte, error) {
 		return nil, errors.New("failed to read response body")
 	}
 	return body, nil
+}
+
+func isSafeRemoteHost(host string) bool {
+	if host == "" {
+		return false
+	}
+
+	if strings.EqualFold(host, "localhost") {
+		return false
+	}
+
+	if ip := net.ParseIP(host); ip != nil {
+		return !isPrivateOrLocalIP(ip)
+	}
+
+	return true
+}
+
+func isPrivateOrLocalIP(ip net.IP) bool {
+	return ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() || ip.IsUnspecified()
 }
 
 func (s *appState) handleFilter(w http.ResponseWriter, r *http.Request) {
