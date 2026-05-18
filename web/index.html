@@ -1,61 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenAPI Module Picker</title>
+    <title>OpenAPI 模块提取器</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>OpenAPI Module Picker</h1>
-            <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+            <h1>OpenAPI 模块提取器</h1>
+            <button class="theme-toggle" id="themeToggle" title="切换暗黑模式">🌙</button>
         </div>
 
         <div class="main-content">
-            <!-- Input Section -->
+            <!-- 输入区域 -->
             <div class="section input-section">
-                <h2>Step 1: Load OpenAPI Document</h2>
+                <h2>第一步：加载 OpenAPI 文档</h2>
                 <div class="input-group">
-                    <input 
-                        type="url" 
-                        id="openApiUrl" 
+                    <input
+                        type="url"
+                        id="openApiUrl"
                         class="input-field"
-                        placeholder="Enter OpenAPI.json HTTP URL (e.g., https://api.example.com/openapi.json)"
+                        placeholder="输入 OpenAPI.json 的 HTTP 地址（如 https://api.example.com/openapi.json）"
                         required
                     >
-                    <button id="parseBtn" class="btn btn-primary">Load & Parse</button>
+                    <button id="parseBtn" class="btn btn-primary">加载并解析</button>
                 </div>
                 <div id="parseMessage" class="message"></div>
             </div>
 
-            <!-- Module Selection Section -->
+            <!-- 模块选择区域 -->
             <div class="section selection-section" id="selectionSection" style="display: none;">
-                <h2>Step 2: Select Modules (Tags)</h2>
+                <h2>第二步：选择模块（标签）</h2>
                 <div class="info-bar" id="infoBar"></div>
-                
+
                 <div class="tags-container" id="tagsContainer">
-                    <!-- Tags will be rendered here -->
+                    <!-- 标签将在这里渲染 -->
                 </div>
 
                 <div class="action-buttons">
-                    <button id="selectAllBtn" class="btn btn-secondary">Select All</button>
-                    <button id="deselectAllBtn" class="btn btn-secondary">Deselect All</button>
-                    <button id="downloadBtn" class="btn btn-primary" disabled>Download Filtered JSON</button>
+                    <button id="selectAllBtn" class="btn btn-secondary">全选</button>
+                    <button id="deselectAllBtn" class="btn btn-secondary">取消全选</button>
+                    <button id="downloadBtn" class="btn btn-primary" disabled>下载过滤后的 JSON</button>
                 </div>
 
                 <div id="downloadMessage" class="message"></div>
             </div>
 
-            <!-- Info Section -->
+            <!-- 使用说明 -->
             <div class="section info-section">
-                <h3>How to use:</h3>
+                <h3>使用说明：</h3>
                 <ol>
-                    <li>Paste the HTTP URL of your OpenAPI.json file</li>
-                    <li>Click "Load & Parse" to fetch and analyze the document</li>
-                    <li>Select the modules (tags) you want to include</li>
-                    <li>Click "Download Filtered JSON" to get the filtered document</li>
+                    <li>粘贴 OpenAPI.json 文件的 HTTP 地址</li>
+                    <li>点击「加载并解析」获取并分析文档</li>
+                    <li>选择需要的模块（标签）</li>
+                    <li>点击「下载过滤后的 JSON」获取筛选结果</li>
                 </ol>
             </div>
         </div>

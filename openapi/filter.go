@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 )
 
-// FilterByTags creates a new OpenAPI document containing only selected tags
-// It preserves all content without modification, only removes unselected paths
+// FilterByTags 创建一个仅包含选定标签的新 OpenAPI 文档。
+// 通过深拷贝原始文档，移除不包含选定标签的路径，保留所有其他内容不变。
+// 过滤粒度为路径级别：只要路径下任意操作的标签命中选定标签，即保留整个路径。
+// 返回格式化的 JSON 字节数据，如果处理失败返回错误。
 func (doc *OpenAPIDocument) FilterByTags(selectedTags []string) ([]byte, error) {
-	// Create a copy of the original document
+	// 创建原始文档的副本
 	filtered := make(map[string]interface{})
-	
-	// Deep copy the document
+
+	// 深拷贝文档，确保原始文档不被修改
 	data, err := json.Marshal(doc.Raw)
 	if err != nil {
 		return nil, err
@@ -20,13 +22,13 @@ func (doc *OpenAPIDocument) FilterByTags(selectedTags []string) ([]byte, error) 
 		return nil, err
 	}
 
-	// Convert selected tags to map for quick lookup
+	// 将选定标签转换为映射，便于快速查找
 	selectedTagsMap := make(map[string]bool)
 	for _, tag := range selectedTags {
 		selectedTagsMap[tag] = true
 	}
 
-	// Filter paths
+	// 过滤路径
 	if paths, ok := filtered["paths"].(map[string]interface{}); ok {
 		pathsToRemove := []string{}
 
@@ -36,7 +38,7 @@ func (doc *OpenAPIDocument) FilterByTags(selectedTags []string) ([]byte, error) 
 				continue
 			}
 
-			// Check all HTTP methods to see if any has selected tags
+			// 检查所有 HTTP 方法，看是否有任何操作包含选定标签
 			hasSelectedTag := false
 			methodsToCheck := []string{"get", "post", "put", "delete", "patch", "options", "head", "trace"}
 
@@ -59,19 +61,19 @@ func (doc *OpenAPIDocument) FilterByTags(selectedTags []string) ([]byte, error) 
 				}
 			}
 
-			// Mark path for removal if it doesn't have selected tags
+			// 标记需要移除的路径（不包含选定标签）
 			if !hasSelectedTag {
 				pathsToRemove = append(pathsToRemove, pathName)
 			}
 		}
 
-		// Remove unmarked paths
+		// 移除未标记的路径
 		for _, pathName := range pathsToRemove {
 			delete(paths, pathName)
 		}
 	}
 
-	// Convert back to JSON
+	// 转换回 JSON 格式
 	result, err := json.MarshalIndent(filtered, "", "  ")
 	if err != nil {
 		return nil, err
