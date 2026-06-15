@@ -30,7 +30,7 @@ description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导
    - `src/main/resources/` 下的配置文件
    - 其他常见配置文件：`config.yaml`、`settings.toml`、`config.json`
 
-2. **查找已记录约定** —— 检查 `CLAUDE.md`、`README.md` 中是否记录了项目的 OpenAPI 文档地址
+2. **查找已记录约定** —— 检查 `CLAUDE.md`、`AGENTS.md`、`README.md` 中是否记录了项目的 OpenAPI 文档地址
 
 3. **拼接候选 URL** —— 将提取到的端口与常见路径组合（以下仅为尝试性拼接，不是必然存在的路径）：
    - `http://localhost:{port}/v3/api-docs`
@@ -51,7 +51,7 @@ description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导
 
 自动发现失败时，从上下文中查找：
 - 当前打开的文件中是否有 OpenAPI/Swagger URL？
-- 项目的 `CLAUDE.md`、`README.md` 中是否有记录？
+- 项目的 `CLAUDE.md`、`AGENTS.md`、`README.md` 中是否有记录？
 - `api-docs/` 目录中是否有历史导出文件（可从中反推 URL）？
 
 **0.3 主动推荐**
@@ -65,7 +65,7 @@ description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导
 以上全部失败时，引导用户提供：
 > 「请提供 OpenAPI 文档的 URL 地址，我将帮你探查可用的标签。」
 >
-> 提示：可以在项目 `CLAUDE.md` 中记录 API 文档地址，下次就能自动发现。
+> 提示：可以在项目 `CLAUDE.md`、`AGENTS.md` 中记录 API 文档地址，下次就能自动发现。
 
 ### 阶段 1：探查标签
 
@@ -118,7 +118,7 @@ openapi-module-picker filter --url <url> --tags tag1,tag2,... --output <file-pat
 | `api-docs/` 中有历史导出文件 | 提示：「上次导出了 `user`、`order`，这次是否一样？」|
 | 用户提到业务模块名 | 在标签列表中高亮匹配项 |
 | 用户直接说出了标签名 | 跳过 fetch，直接 filter（仍需确认 URL）|
-| `CLAUDE.md` 中记录了 API 文档地址 | 直接使用，无需询问 |
+| `CLAUDE.md`、`AGENTS.md` 中记录了 API 文档地址 | 直接使用，无需询问 |
 
 ## 错误处理
 
