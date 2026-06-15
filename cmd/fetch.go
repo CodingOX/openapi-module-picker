@@ -3,12 +3,15 @@
 package cmd
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"os"
 
 	"openapi-module-picker/openapi"
 )
+
+// ErrNoTagsFound 表示文档中未找到任何 tag，调用方应据此以 exit code 2 退出。
+var ErrNoTagsFound = errors.New("文档中未找到任何 tag")
 
 // RunFetch 执行 fetch 子命令。
 // 从 --url 指定的地址拉取 OpenAPI 文档，提取所有 tag 并逐行输出到 stdout。
@@ -32,8 +35,7 @@ func RunFetch(args []string) error {
 
 	tags := doc.GetAllTags()
 	if len(tags) == 0 {
-		fmt.Fprintln(os.Stderr, "文档中未找到任何 tag")
-		os.Exit(2)
+		return ErrNoTagsFound
 	}
 
 	for _, tag := range tags {
