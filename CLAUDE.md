@@ -53,3 +53,13 @@ Go Web 应用，零外部依赖，纯标准库实现。从远程 OpenAPI/Swagger
 ### 前端
 
 纯 HTML/CSS/JS，无框架。CSS 变量驱动亮/暗主题切换，localStorage 持久化偏好。
+
+## OpenAPI 文档地址约定（可选提示）
+
+目标服务通常是 Spring Boot + SpringDoc 项目，API 文档地址模式为：
+`http://localhost:{port}/v3/api-docs`
+
+端口一般从 `src/main/resources/application.yml` 的 `server.port` 读取。
+若无 SpringDoc，常见替代路径：`/v2/api-docs`（SpringFox）、`/openapi.json`（FastAPI）。
+
+openapi-picker skill 会自动扫描配置文件来发现 URL 并尝试连接。
