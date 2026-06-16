@@ -3,9 +3,9 @@ name: openapi-picker
 description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件。当用户提到 OpenAPI、Swagger、API 文档、接口文档、API 模块筛选、按 tag 提取接口、或需要获取/过滤/拆分远程 API 规范时，务必使用此 skill——即使用户没有明确说"用 skill"或"用 CLI"，只要涉及从 OpenAPI 文档中提取子集，都应该触发。
 ---
 
-# OpenAPI Module Picker
+# openapi-trim
 
-从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件。CLI 工具 `openapi-module-picker` 提供 `fetch`（探查标签）和 `filter`（过滤导出）两个子命令。
+从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件。CLI 工具 `openapi-trim` 提供 `fetch`（探查标签）和 `filter`（过滤导出）两个子命令。
 
 ## 核心原则
 
@@ -70,7 +70,7 @@ description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导
 ### 阶段 1：探查标签
 
 ```bash
-openapi-module-picker fetch --url <openapi-json-url>
+openapi-trim fetch --url <openapi-json-url>
 ```
 
 stdout 输出排序后的标签列表（每行一个）。失败时参考「错误处理」章节。
@@ -96,7 +96,7 @@ stdout 输出排序后的标签列表（每行一个）。失败时参考「错�
 ### 阶段 3：过滤导出
 
 ```bash
-openapi-module-picker filter --url <url> --tags tag1,tag2,... --output <file-path>
+openapi-trim filter --url <url> --tags tag1,tag2,... --output <file-path>
 ```
 
 - `--url` 与 fetch 阶段保持相同

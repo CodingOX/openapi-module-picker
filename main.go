@@ -1,4 +1,4 @@
-// Package main 提供 OpenAPI Module Picker 的 CLI 入口。
+// Package main 提供 openapi-trim 的 CLI 入口。
 // 支持三个子命令：fetch（探查标签）、filter（过滤导出）、serve（Web 服务）。
 package main
 
@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"openapi-module-picker/cmd"
+	"openapi-trim/cmd"
 )
 
 func main() {
@@ -42,13 +42,13 @@ func main() {
 
 // printUsage 输出帮助信息到 stderr。
 func printUsage() {
-	fmt.Fprintf(os.Stderr, "用法: openapi-module-picker <command> [options]\n\n")
+	fmt.Fprintf(os.Stderr, "用法: openapi-trim <command> [options]\n\n")
 	fmt.Fprintf(os.Stderr, "命令:\n")
 	fmt.Fprintf(os.Stderr, "  fetch   从远程 OpenAPI 文档提取所有标签\n")
 	fmt.Fprintf(os.Stderr, "  filter  按标签过滤 OpenAPI 文档并导出文件\n")
 	fmt.Fprintf(os.Stderr, "  serve   启动 Web 服务\n\n")
 	fmt.Fprintf(os.Stderr, "示例:\n")
-	fmt.Fprintf(os.Stderr, "  openapi-module-picker fetch --url https://api.example.com/openapi.json\n")
-	fmt.Fprintf(os.Stderr, "  openapi-module-picker filter --url <url> --tags user,order --output api-docs/result.json\n")
-	fmt.Fprintf(os.Stderr, "  openapi-module-picker serve --port 8326\n")
+	fmt.Fprintf(os.Stderr, "  openapi-trim fetch --url https://api.example.com/openapi.json\n")
+	fmt.Fprintf(os.Stderr, "  openapi-trim filter --url <url> --tags user,order --output api-docs/result.json\n")
+	fmt.Fprintf(os.Stderr, "  openapi-trim serve --port 8326\n")
 }

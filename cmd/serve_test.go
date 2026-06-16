@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"openapi-module-picker/openapi"
+	"openapi-trim/openapi"
 )
 
 // ===== handleParse 测试 =====

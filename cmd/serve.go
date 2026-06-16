@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"openapi-module-picker/openapi"
+	"openapi-trim/openapi"
 )
 
 // currentDocument 存储已解析的 OpenAPI 文档，用于后续过滤操作。
@@ -59,7 +59,7 @@ func RunServe(args []string) error {
 	mux.HandleFunc("/api/filter", handleFilter)
 
 	addr := ":" + *port
-	fmt.Printf("OpenAPI Module Picker starting on http://localhost%s\n", addr)
+	fmt.Printf("openapi-trim starting on http://localhost%s\n", addr)
 	return http.ListenAndServe(addr, mux)
 }
 

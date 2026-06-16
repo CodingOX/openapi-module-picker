@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # 构建
-go build -o openapi-module-picker
+go build -o openapi-trim
 
 # 运行（监听 :8080）
 go run main.go

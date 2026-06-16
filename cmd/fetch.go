@@ -7,7 +7,7 @@ import (
 	"flag"
 	"fmt"
 
-	"openapi-module-picker/openapi"
+	"openapi-trim/openapi"
 )
 
 // ErrNoTagsFound 表示文档中未找到任何 tag，调用方应据此以 exit code 2 退出。

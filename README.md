@@ -1,4 +1,4 @@
-# OpenAPI Module Picker
+# openapi-trim
 
 A lightweight tool to extract and download specific API modules from large OpenAPI/Swagger documentation. Instead of handling massive OpenAPI JSON files, this tool lets you select only the modules (tags) you need and download a filtered version containing just those APIs.
 
@@ -34,14 +34,14 @@ A lightweight tool to extract and download specific API modules from large OpenA
 
 ```bash
 # Clone the repository
-git clone https://github.com/CodingOX/openapi-module-picker.git
-cd openapi-module-picker
+git clone https://github.com/CodingOX/openapi-trim.git
+cd openapi-trim
 
 # Build the application
-go build -o openapi-module-picker
+go build -o openapi-trim
 
 # Run
-./openapi-module-picker
+./openapi-trim
 ```
 
 The application will start on `http://localhost:8080`
@@ -61,7 +61,7 @@ The application will start on `http://localhost:8080`
 ## Project Structure
 
 ```
-openapi-module-picker/
+openapi-trim/
 ├── main.go              # HTTP server and API endpoints
 ├── openapi/
 │   ├── parser.go        # OpenAPI parsing logic (3.0 & 2.0)

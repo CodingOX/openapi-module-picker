@@ -26,4 +26,4 @@ go.work
 # Build output
 bin/
 dist/
-openapi-module-picker
+openapi-trim

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"openapi-module-picker/openapi"
+	"openapi-trim/openapi"
 )
 
 // RunFilter 执行 filter 子命令。
