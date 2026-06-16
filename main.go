@@ -9,10 +9,20 @@ import (
 	"openapi-trim/cmd"
 )
 
+// version 在构建时通过 -ldflags 注入，如：
+//
+//	go build -ldflags="-X main.version=1.0.0" -o openapi-trim
+var version = "dev"
+
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) < 2 || os.Args[1] == "--help" || os.Args[1] == "-h" {
 		printUsage()
 		os.Exit(1)
+	}
+
+	if os.Args[1] == "--version" || os.Args[1] == "-v" {
+		fmt.Printf("openapi-trim version %s\n", version)
+		return
 	}
 
 	var err error
@@ -47,6 +57,9 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  fetch   从远程 OpenAPI 文档提取所有标签\n")
 	fmt.Fprintf(os.Stderr, "  filter  按标签过滤 OpenAPI 文档并导出文件\n")
 	fmt.Fprintf(os.Stderr, "  serve   启动 Web 服务\n\n")
+	fmt.Fprintf(os.Stderr, "选项:\n")
+	fmt.Fprintf(os.Stderr, "  -v, --version   显示版本号\n")
+	fmt.Fprintf(os.Stderr, "  -h, --help      显示帮助信息\n\n")
 	fmt.Fprintf(os.Stderr, "示例:\n")
 	fmt.Fprintf(os.Stderr, "  openapi-trim fetch --url https://api.example.com/openapi.json\n")
 	fmt.Fprintf(os.Stderr, "  openapi-trim filter --url <url> --tags user,order --output api-docs/result.json\n")
