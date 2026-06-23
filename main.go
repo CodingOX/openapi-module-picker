@@ -31,6 +31,12 @@ func main() {
 		err = cmd.RunFetch(os.Args[2:])
 	case "filter":
 		err = cmd.RunFilter(os.Args[2:])
+	case "summary":
+		err = cmd.RunSummary(os.Args[2:])
+	case "list":
+		err = cmd.RunList(os.Args[2:])
+	case "describe":
+		err = cmd.RunDescribe(os.Args[2:])
 	case "serve":
 		err = cmd.RunServe(os.Args[2:])
 	default:
@@ -54,14 +60,20 @@ func main() {
 func printUsage() {
 	fmt.Fprintf(os.Stderr, "用法: openapi-trim <command> [options]\n\n")
 	fmt.Fprintf(os.Stderr, "命令:\n")
-	fmt.Fprintf(os.Stderr, "  fetch   从远程 OpenAPI 文档提取所有标签\n")
-	fmt.Fprintf(os.Stderr, "  filter  按标签过滤 OpenAPI 文档并导出文件\n")
-	fmt.Fprintf(os.Stderr, "  serve   启动 Web 服务\n\n")
+	fmt.Fprintf(os.Stderr, "  fetch     从远程 OpenAPI 文档提取所有标签\n")
+	fmt.Fprintf(os.Stderr, "  filter    按标签过滤 OpenAPI 文档并导出 JSON 文件\n")
+	fmt.Fprintf(os.Stderr, "  summary   生成 API 全局概览 Markdown\n")
+	fmt.Fprintf(os.Stderr, "  list      按标签列出 API 接口清单 Markdown\n")
+	fmt.Fprintf(os.Stderr, "  describe  查看单个接口的完整契约 Markdown\n")
+	fmt.Fprintf(os.Stderr, "  serve     启动 Web 服务\n\n")
 	fmt.Fprintf(os.Stderr, "选项:\n")
 	fmt.Fprintf(os.Stderr, "  -v, --version   显示版本号\n")
 	fmt.Fprintf(os.Stderr, "  -h, --help      显示帮助信息\n\n")
 	fmt.Fprintf(os.Stderr, "示例:\n")
 	fmt.Fprintf(os.Stderr, "  openapi-trim fetch --url https://api.example.com/openapi.json\n")
 	fmt.Fprintf(os.Stderr, "  openapi-trim filter --url <url> --tags user,order --output api-docs/result.json\n")
+	fmt.Fprintf(os.Stderr, "  openapi-trim summary --file output.json\n")
+	fmt.Fprintf(os.Stderr, "  openapi-trim list --file output.json --tags exam,user\n")
+	fmt.Fprintf(os.Stderr, "  openapi-trim describe --file output.json --path /exams --method get\n")
 	fmt.Fprintf(os.Stderr, "  openapi-trim serve --port 8326\n")
 }

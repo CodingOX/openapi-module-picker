@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"sort"
 )
 
@@ -49,6 +50,22 @@ func ParseOpenAPI(url string) (*OpenAPIDocument, error) {
 		Version: version,
 		Raw:     doc,
 	}, nil
+}
+
+// ParseOpenAPIFromFile 从本地文件解析 OpenAPI 文档。
+// 自动检测文档版本（OpenAPI 3.x 或 Swagger 2.0）。
+func ParseOpenAPIFromFile(path string) (*OpenAPIDocument, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var doc map[string]interface{}
+	err = json.Unmarshal(data, &doc)
+	if err != nil {
+		return nil, err
+	}
+	version := detectOpenAPIVersion(doc)
+	return &OpenAPIDocument{Version: version, Raw: doc}, nil
 }
 
 // detectOpenAPIVersion 检测文档是 OpenAPI 3.x 还是 Swagger 2.0。
