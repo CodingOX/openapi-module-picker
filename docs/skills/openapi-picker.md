@@ -1,16 +1,27 @@
 ---
 name: openapi-picker
-description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件。当用户提到 OpenAPI、Swagger、API 文档、接口文档、API 模块筛选、按 tag 提取接口、或需要获取/过滤/拆分远程 API 规范时，务必使用此 skill——即使用户没有明确说"用 skill"或"用 CLI"，只要涉及从 OpenAPI 文档中提取子集，都应该触发。
+description: 从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件，或对已有文档进行 LLM 友好的结构化查询（概述、按标签列接口、查看单个接口契约）。当用户提到 OpenAPI、Swagger、API 文档、接口文档、API 模块筛选、按 tag 提取接口、查看 API 概览、查看接口详情、或需要获取/过滤/查询远程或本地 API 规范时，务必使用此 skill——即使用户没有明确说"用 skill"或"用 CLI"，只要涉及 OpenAPI 文档的处理和查询，都应该触发。
 ---
 
 # openapi-trim
 
-从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件。CLI 工具 `openapi-trim` 提供 `fetch`（探查标签）和 `filter`（过滤导出）两个子命令。
+从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出为文件。也支持对本地或远程的 OpenAPI 文档进行 LLM 友好的结构化查询。CLI 工具 `openapi-trim` 提供六个子命令：
+
+| 命令 | 用途 |
+|------|------|
+| `fetch` | 探查远程文档的所有标签 |
+| `filter` | 按标签过滤并导出 JSON 文件 |
+| `summary` | 生成 API 全局概览 Markdown（LLM 友好） |
+| `list` | 按标签列出接口清单 Markdown |
+| `describe` | 查看单个接口的完整契约 Markdown |
+| `serve` | 启动 Web 服务 |
+
+所有查询类命令（summary / list / describe）均支持 `--file` 和 `--url` 双源。
 
 ## 核心原则
 
-- **不在对话中消费文档内容** —— CLI 输出极简（fetch 输出标签列表，filter 输出文件路径），大模型无需读取或展示原始 JSON
-- **先探查再操作** —— 永远先 `fetch` 让用户看到有哪些标签，再让用户选择后执行 `filter`
+- **输出即消费** —— fetch/filter 输出极简（标签列表或文件路径），大模型无需读取原始 JSON；summary/list/describe 直接输出结构化 Markdown，大模型可直接理解
+- **先探查再操作** —— 涉及筛选导出时永远先 `fetch` 让用户看到有哪些标签，再让用户选择后执行 `filter`；涉及查询时直接用 `--file` 定位已有文档
 - **用户确认优先** —— 涉及网络请求和文件写入，必须让用户确认后再执行
 
 ## 工作流程
@@ -108,6 +119,62 @@ openapi-trim filter --url <url> --tags tag1,tag2,... --output <file-path>
 
 `filter` 在 stdout 输出生成文件的绝对路径（一行），告知用户即可。
 
+### 阶段 5：结构化查询（LLM 友好输出）
+
+当用户已有本地 OpenAPI JSON 文件（或可通过 URL 访问远程文档），且需要大模型理解 API 内容时，使用以下查询命令。输出为结构化 Markdown，大模型无需读取原始 JSON 即可理解。
+
+**5.1 生成全局概览（summary）**
+
+```bash
+openapi-trim summary --file output.json
+# 或从远程文档
+openapi-trim summary --url https://api.example.com/openapi.json
+```
+
+输出 Markdown，包含：
+- API 标题与版本号
+- 业务模块（标签）列表及接口数
+- 被引用最多的 Top 10 数据模型（含字段数和引用次数）
+
+**5.2 按标签列出接口（list）**
+
+```bash
+# 查看指定标签下的接口清单
+openapi-trim list --file output.json --tags exam,user
+
+# 不加 --tags 则列出全部标签
+openapi-trim list --file output.json
+```
+
+输出 Markdown 表格，按标签分组展示：
+- HTTP 方法、路径、摘要
+- 该模块涉及的数据模型列表
+
+**5.3 查看单个接口的完整契约（describe）**
+
+```bash
+openapi-trim describe --file output.json --path /exams --method get
+# 查看 POST 接口
+openapi-trim describe --file output.json --path /exams --method post
+```
+
+输出 Markdown，包含：
+- 接口摘要和说明
+- 请求参数（按 path/query/header 分组，含类型、必填、说明）
+- 请求体（展开 `$ref` 为扁平字段列表，含中文标题）
+- 响应（按状态码分组，字段同样自动展开 `$ref`）
+
+**核心特性：`$ref` 自动展开**
+
+`describe` 命令会自动递归解析 JSON 指针引用，将 `$ref` 引用的嵌套 schema 拍平为带前缀的字段名。例如：
+
+| 原始 schema | 展开后 |
+|------------|--------|
+| `result` → `$ref: ExamResultDetail` | `result.id`、`result.name`、`result.status` |
+| `teacher` → `$ref: TeacherInfo` | `teacher.id`、`teacher.name` |
+
+大模型无需自己追查 `$ref` 即可理解数据结构。
+
 ## 主动推荐策略
 
 基于上下文减少选择负担：
@@ -119,6 +186,10 @@ openapi-trim filter --url <url> --tags tag1,tag2,... --output <file-path>
 | 用户提到业务模块名 | 在标签列表中高亮匹配项 |
 | 用户直接说出了标签名 | 跳过 fetch，直接 filter（仍需确认 URL）|
 | `CLAUDE.md`、`AGENTS.md` 中记录了 API 文档地址 | 直接使用，无需询问 |
+| 用户想知道 API 整体结构 | 推荐 summary 命令，展示全局概览 |
+| 用户只想看某个模块的接口 | 推荐 list 命令配合 --tags 筛选 |
+| 用户需要理解某个接口的请求/响应 | 推荐 describe 命令查看完整契约 |
+| 本地已有 `.json` 文档 | 直接使用 --file，无需 fetch |
 
 ## 错误处理
 
@@ -132,6 +203,8 @@ exit code: 0 成功，1 通用错误，2 文档中无 tag。
 | 用户未提供 URL | 执行阶段 0 自动发现流程，全部失败则引导用户提供 |
 | 用户未选择标签 | fetch 后必须等待用户确认，不可自行决定 |
 | 输出目录不存在 | filter 前执行 `mkdir -p` 创建目标目录 |
+| describe 的路径或方法不存在 | 命令会在输出首行提示「错误：路径不存在」或「路径下无此方法」，引导用户用 list 确认可用路径 |
+| summary/list/describe 未提供 --file 或 --url | 提示用户指定来源：「请指定 --file 本地路径或 --url 远程地址」|
 
 ## 输出路径规范
 
@@ -171,4 +244,34 @@ exit code: 0 成功，1 通用错误，2 文档中无 tag。
 ```
 用户：帮我筛选 API 文档
 助手：（扫描无果）「请提供 OpenAPI 文档的 URL 地址。提示：可以在 CLAUDE.md 中记录地址方便下次自动发现。」
+```
+
+**5. 已有本地文件 —— 生成概览供 LLM 理解**
+
+```
+用户：帮我看看这个 API 的整体结构
+助手：检测到当前文件 output.json 为 OpenAPI 文档。执行 summary：
+  openapi-trim summary --file output.json
+  输出：API 名称、版本、标签列表（含接口数）、Top 10 数据模型
+  大模型据此理解 API 的全貌
+```
+
+**6. 已有本地文件 —— 只看某个业务模块**
+
+```
+用户：我想看 exam 模块有哪些接口
+助手：执行 list：
+  openapi-trim list --file output.json --tags exam
+  输出：exam 标签下的所有接口（方法、路径、摘要）和涉及的数据模型
+  大模型据此定位到具体接口
+```
+
+**7. 已有本地文件 —— 查看单个接口细节**
+
+```
+用户：帮我解释 POST /exams 这个接口要怎么调
+助手：执行 describe：
+  openapi-trim describe --file output.json --path /exams --method post
+  输出：请求体字段（类型、必填、中文说明）、响应结构（含展开后的嵌套字段）
+  大模型据此给出精确的调用方式，无需阅读原始 JSON
 ```

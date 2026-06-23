@@ -24,24 +24,38 @@ go test ./openapi/ -run TestFilterByTags_SingleTag -v
 
 ## 架构概览
 
-Go Web 应用，零外部依赖，纯标准库实现。从远程 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出。
+Go CLI 应用，零外部依赖，纯标准库实现。从 OpenAPI/Swagger 文档中按标签筛选 API 模块并导出，同时提供 LLM 友好的结构化查询能力。
 
 ### 包结构
 
-- **`main`** — HTTP 服务器入口，提供静态文件服务和两个 API 端点
-- **`openapi`** — 核心业务逻辑，文档解析与过滤
+- **`main`** — CLI 入口，分发子命令
+- **`cmd`** — 子命令实现（fetch/filter/summary/list/describe/serve）
+- **`openapi`** — 核心业务逻辑，文档解析、过滤、摘要生成
 
 ### 数据流
 
 ```
-前端 URL 输入 → POST /api/parse → openapi.ParseOpenAPI(url)
-                                  → 解析 JSON，自动检测版本（3.0/2.0）
-                                  → 提取所有 tags 返回前端
+# 原有：JSON 导出
+远程 URL → ParseOpenAPI(url) → FilterByTags(tags) → 过滤后的 JSON
 
-前端选择 tags → POST /api/filter → OpenAPIDocument.FilterByTags(tags)
-                                  → 深拷贝文档，移除不匹配路径
-                                  → 返回过滤后的 JSON 供下载
+# 新增：LLM 友好查询
+本地文件/远程 URL → NewSummarizer(doc) → GenerateSummary()   → Markdown 概览
+                                        → ListByTags(tags)    → Markdown 接口清单
+                                        → DescribeEndpoint()  → Markdown 完整契约
 ```
+
+### CLI 命令
+
+| 命令 | 用途 | 典型用法 |
+|------|------|---------|
+| `fetch` | 列出所有标签 | `--url <url>` |
+| `filter` | 按标签过滤导出 JSON | `--url <url> --tags a,b --output out.json` |
+| `summary` | 全局概览 Markdown | `--file output.json` |
+| `list` | 按标签列出接口 | `--file output.json --tags exam,user` |
+| `describe` | 单个接口完整契约 | `--file output.json --path /exams --method get` |
+| `serve` | 启动 Web 服务 | `--port 8326` |
+
+所有查询类命令均支持 `--file` 和 `--url` 双源。
 
 ### 关键设计决策
 
@@ -49,6 +63,8 @@ Go Web 应用，零外部依赖，纯标准库实现。从远程 OpenAPI/Swagger
 2. **版本检测**：检查 JSON 中 `openapi` 字段是否以 `"3"` 开头，否则默认为 Swagger 2.0
 3. **过滤粒度**：按 path 级别过滤，只要 path 下任一 operation 的 tag 命中即保留整个 path
 4. **深拷贝策略**：`FilterByTags` 通过 marshal/unmarshal 实现深拷贝，确保原始文档不被修改
+5. **$ref 解析**：`Summarizer` 内置 `$ref` 解析器和 `schemaCache`，支持递归展开嵌套引用（由 `visited` 集合防止循环）
+6. **字段渲染**：`DescribeEndpoint` 自动展开属性中的 `$ref` 为带前缀的子字段（如 `teacher.id`、`teacher.name`），LLM 无需再追查引用
 
 ### 前端
 
