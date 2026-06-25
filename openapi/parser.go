@@ -24,6 +24,14 @@ type PathItem struct {
 	Methods map[string]interface{} // HTTP 方法到操作定义的映射
 }
 
+// EndpointInfo 表示一个 API 端点的基本信息，供 Summarizer 和 CLI 层使用。
+type EndpointInfo struct {
+	Method  string   // HTTP 方法，如 "get", "post"
+	Path    string   // API 路径，如 "/users"
+	Summary string   // 接口摘要
+	Tags    []string // 关联标签列表
+}
+
 // ParseOpenAPI 从指定 URL 获取并解析 OpenAPI 文档。
 // 自动检测文档版本（OpenAPI 3.x 或 Swagger 2.0），返回解析后的文档对象。
 // 如果 URL 无效或文档格式错误，返回相应的错误。
@@ -252,6 +260,48 @@ func (doc *OpenAPIDocument) GetPathsByTags(selectedTags map[string]bool) []PathI
 	}
 
 	return paths
+}
+
+// GetAllEndpoints 返回文档中所有 API 端点的扁平列表，不按标签分组。
+// 按路径名和方法名排序，支持按 HTTP 方法过滤（通过 CLI 层实现）。
+func (doc *OpenAPIDocument) GetAllEndpoints() []EndpointInfo {
+	var result []EndpointInfo
+	paths, ok := doc.Raw["paths"].(map[string]interface{})
+	if !ok {
+		return result
+	}
+
+	pathNames := make([]string, 0, len(paths))
+	for p := range paths {
+		pathNames = append(pathNames, p)
+	}
+	sort.Strings(pathNames)
+
+	for _, pathName := range pathNames {
+		pathItem, _ := paths[pathName].(map[string]interface{})
+		for _, method := range []string{"get", "post", "put", "delete", "patch", "options", "head", "trace"} {
+			op, ok := pathItem[method].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			summary, _ := op["summary"].(string)
+			var tags []string
+			if tagsList, ok := op["tags"].([]interface{}); ok {
+				for _, t := range tagsList {
+					if tStr, ok := t.(string); ok {
+						tags = append(tags, tStr)
+					}
+				}
+			}
+			result = append(result, EndpointInfo{
+				Method:  method,
+				Path:    pathName,
+				Summary: summary,
+				Tags:    tags,
+			})
+		}
+	}
+	return result
 }
 
 // tagsFromMap 将标签映射转换为排序后的字符串切片。

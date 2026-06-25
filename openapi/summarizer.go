@@ -28,9 +28,10 @@ type TagSummary struct {
 
 // SchemaCount 表示一个数据模型的引用统计。
 type SchemaCount struct {
-	Name       string // 模型名
-	FieldCount int    // 字段数
-	RefCount   int    // 被接口引用的次数
+	Name        string // 模型名
+	FieldCount  int    // 字段数
+	RefCount    int    // 被接口引用的次数
+	Description string // 模型描述（取自 schema 的 description 字段）
 }
 
 // ---- Summarizer ----
@@ -154,9 +155,9 @@ func (s *Summarizer) ListByTags(tags []string) string {
 		b.WriteString("|------|------|------|\n")
 		for _, ep := range tagEndpoints {
 			b.WriteString(fmt.Sprintf("| %s | `%s` | %s |\n",
-				strings.ToUpper(ep.method),
-				escapeMarkdown(ep.path),
-				escapeMarkdown(ep.summary)))
+				strings.ToUpper(ep.Method),
+				escapeMarkdown(ep.Path),
+				escapeMarkdown(ep.Summary)))
 		}
 
 		// 收集涉及的数据模型
@@ -205,7 +206,98 @@ func (s *Summarizer) DescribeEndpoint(path, method string) string {
 	return b.String()
 }
 
+// GetAllSchemas 返回文档中所有数据模型的统计信息。
+// 包含 components/schemas（OpenAPI 3.x）或 definitions（Swagger 2.0）中的全部模型，
+// 按被接口引用次数降序排列，未引用的模型 RefCount 为 0。
+func (s *Summarizer) GetAllSchemas() []SchemaCount {
+	// 获取所有 schema 名称
+	schemaNames := s.getAllSchemaNames()
+	if len(schemaNames) == 0 {
+		return nil
+	}
+
+	// 引用计数
+	refCounts := s.countSchemaRefs()
+
+	result := make([]SchemaCount, 0, len(schemaNames))
+	for _, name := range schemaNames {
+		sc := SchemaCount{
+			Name:       name,
+			FieldCount: s.getFieldCount(name),
+			RefCount:   refCounts[name],
+		}
+
+		// 从 schema 自身提取 description
+		if schema, err := s.resolveRef(s.schemaRef(name)); err == nil {
+			if desc, ok := schema["description"].(string); ok {
+				sc.Description = desc
+			}
+		}
+		result = append(result, sc)
+	}
+
+	// 按 RefCount 降序排列
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].RefCount != result[j].RefCount {
+			return result[i].RefCount > result[j].RefCount
+		}
+		return result[i].Name < result[j].Name
+	})
+
+	return result
+}
+
+// getAllSchemaNames 返回文档中所有 schema 名称（已排序）。
+func (s *Summarizer) getAllSchemaNames() []string {
+	var schemaMap map[string]interface{}
+
+	if s.doc.Version == "2.0" {
+		if defs, ok := s.doc.Raw["definitions"].(map[string]interface{}); ok {
+			schemaMap = defs
+		}
+	} else {
+		if components, ok := s.doc.Raw["components"].(map[string]interface{}); ok {
+			if schemas, ok := components["schemas"].(map[string]interface{}); ok {
+				schemaMap = schemas
+			}
+		}
+	}
+
+	if schemaMap == nil {
+		return nil
+	}
+
+	names := make([]string, 0, len(schemaMap))
+	for name := range schemaMap {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// DescribeSchema 返回指定数据模型的展开字段列表。
+// name 为 schema 名称（如 "AbnormalDetail"），自动根据文档版本
+// 处理 OpenAPI 3.x 的 #/components/schemas/ 和 Swagger 2.0 的 #/definitions/ 路径。
+// 返回的字段列表已递归展开 $ref 嵌套引用。
+func (s *Summarizer) DescribeSchema(name string) ([]ResolvedField, error) {
+	ref := s.schemaRef(name)
+	schema, err := s.resolveRef(ref)
+	if err != nil {
+		return nil, fmt.Errorf("数据模型不存在: %s", name)
+	}
+	return s.flattenSchema(schema, nil), nil
+}
+
 // ---- $ref 解析 ----
+
+// schemaRef 根据文档版本返回正确的 $ref 前缀路径。
+// OpenAPI 3.x 使用 "#/components/schemas/"，Swagger 2.0 使用 "#/definitions/"。
+func (s *Summarizer) schemaRef(name string) string {
+	if s.doc.Version == "2.0" {
+		return "#/definitions/" + name
+	}
+	return "#/components/schemas/" + name
+}
 
 // resolveRef 解析 $ref 字符串，返回引用的 schema 对象。
 // 支持 "#/components/schemas/XXX" 等 JSON 指针格式。
@@ -338,19 +430,9 @@ func (s *Summarizer) flattenSchema(schema map[string]interface{}, visited map[st
 	return fields
 }
 
-// ---- 内部类型 ----
-
-// endpointInfo 表示一个接口的基本信息。
-type endpointInfo struct {
-	method  string
-	path    string
-	summary string
-	tags    []string
-}
-
 // getEndpointsByTag 返回属于指定标签的所有接口。
-func (s *Summarizer) getEndpointsByTag(tag string) []endpointInfo {
-	var result []endpointInfo
+func (s *Summarizer) getEndpointsByTag(tag string) []EndpointInfo {
+	var result []EndpointInfo
 	paths, ok := s.doc.Raw["paths"].(map[string]interface{})
 	if !ok {
 		return result
@@ -374,10 +456,10 @@ func (s *Summarizer) getEndpointsByTag(tag string) []endpointInfo {
 			for _, t := range tags {
 				if tStr, ok := t.(string); ok && tStr == tag {
 					summary, _ := op["summary"].(string)
-					result = append(result, endpointInfo{
-						method:  method,
-						path:    pathName,
-						summary: summary,
+					result = append(result, EndpointInfo{
+						Method:  method,
+						Path:    pathName,
+						Summary: summary,
 					})
 					break
 				}
@@ -398,18 +480,18 @@ func (s *Summarizer) collectTags(op map[string]interface{}, set map[string]bool)
 }
 
 // collectEndpointModels 收集一组 endpoint 涉及的数据模型名称。
-func (s *Summarizer) collectEndpointModels(endpoints []endpointInfo) []string {
+func (s *Summarizer) collectEndpointModels(endpoints []EndpointInfo) []string {
 	modelSet := make(map[string]bool)
 	for _, ep := range endpoints {
 		paths, ok := s.doc.Raw["paths"].(map[string]interface{})
 		if !ok {
 			continue
 		}
-		pathItem, ok := paths[ep.path].(map[string]interface{})
+		pathItem, ok := paths[ep.Path].(map[string]interface{})
 		if !ok {
 			continue
 		}
-		op, ok := pathItem[ep.method].(map[string]interface{})
+		op, ok := pathItem[ep.Method].(map[string]interface{})
 		if !ok {
 			continue
 		}
@@ -560,7 +642,7 @@ func (s *Summarizer) countSchemaRefs() map[string]int {
 
 // getFieldCount 返回指定 schema 的字段数（顶级 properties 数量）。
 func (s *Summarizer) getFieldCount(schemaName string) int {
-	schema, err := s.resolveRef("#/components/schemas/" + schemaName)
+	schema, err := s.resolveRef(s.schemaRef(schemaName))
 	if err != nil {
 		return 0
 	}
@@ -890,4 +972,9 @@ func escapeMarkdown(s string) string {
 	s = strings.ReplaceAll(s, "|", "\\|")
 	s = strings.ReplaceAll(s, "\n", " ")
 	return s
+}
+
+// EscapeMarkdown 是 escapeMarkdown 的公开包装，供 cmd 层使用。
+func EscapeMarkdown(s string) string {
+	return escapeMarkdown(s)
 }
